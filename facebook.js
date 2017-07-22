@@ -24,6 +24,7 @@ class Facebook {
     }
     login() {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log("login()");
             yield this.nightmare.goto("https://m.facebook.com")
                 .wait('[name="email"]')
                 .type('[name="email"]', argv._[0])
@@ -32,11 +33,13 @@ class Facebook {
                 .wait('img[alt*="Nam"]')
                 .evaluate(() => { })
                 .then(() => { });
+            console.log("====> Login done");
             return;
         });
     }
     post() {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('post()');
             return yield this.nightmare
                 .goto(argv._[2])
                 .wait(3000)
@@ -49,6 +52,7 @@ class Facebook {
                 .evaluate(() => {
             })
                 .then(() => {
+                console.log('Done with url: ', argv._[2]);
             });
         });
     }

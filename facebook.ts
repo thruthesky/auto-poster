@@ -22,7 +22,7 @@ class Facebook {
     }
 
     async login() {
-        // console.log("login()");
+        console.log("login()");
         await this.nightmare.goto("https://m.facebook.com")
             .wait('[name="email"]')
             .type('[name="email"]', argv._[0])
@@ -31,11 +31,12 @@ class Facebook {
             .wait('img[alt*="Nam"]')
             .evaluate(() => { })
             .then(() => { });
+	console.log("====> Login done");
         return;
     }
 
     async post() {
-        // console.log('post()');
+        console.log('post()');
         return await this.nightmare
             .goto( argv._[2])
             .wait(3000)
@@ -49,7 +50,7 @@ class Facebook {
 
             })
             .then(() => {
-                // console.log('Done with url: ', argv._[2]);
+                console.log('Done with url: ', argv._[2]);
             });
     }
 
