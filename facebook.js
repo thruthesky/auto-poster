@@ -24,7 +24,6 @@ class Facebook {
     }
     login() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("login()");
             yield this.nightmare.goto("https://m.facebook.com")
                 .wait('[name="email"]')
                 .type('[name="email"]', argv._[0])
@@ -33,7 +32,6 @@ class Facebook {
                 .wait('img[alt*="Nam"]')
                 .evaluate(() => { })
                 .then(() => { });
-            console.log("====> Login done");
             return;
         });
     }
