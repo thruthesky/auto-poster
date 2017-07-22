@@ -22,16 +22,16 @@ class Philgo {
     }
 
     async login() {
-        console.log("login()");
+        // console.log("login()");
         let redirect = encodeURIComponent(argv._[2]);
         let url = `https://www.philgo.com/?module=member&action=login_submit&submit=1&url_return=${redirect}&id=${argv._[0]}&password=${argv._[1]}`;
-	console.log("url: ", url);
+        // console.log("url: ", url);
         await this.nightmare.goto(url)
             .wait('.login-simple-message');
     }
 
     async post() {
-        console.log('post()');
+        // console.log('post()');
         await this.nightmare
             .wait('.post_write [name="subject"]')
             .insert('.post_write [name="subject"]', "여러 한인업체에서 돈 훔치고 도망간 피노이 William")
@@ -50,12 +50,12 @@ Gender : Male ( often female )</div>
 `)
             .click('.post_write_submit')
             .wait('.jbutton.plus');
-        console.log('post() done');
+        //console.log('post() done');
     }
 
     async end() {
-        console.log("end()");
-        return this.nightmare.end().then(() => {});
+        // console.log("end()");
+        return this.nightmare.end().then(() => { });
     }
 }
 

@@ -12,9 +12,14 @@ You must pass 'Post write' page for posting on philgo.com
 node philgo id pw address-to-post
 ````
 
-ex)
+ex) on OSX
 ````
 node philgo.js williamtheif moneysteal "/?&module=post&action=write&post_id=lookfor"
+````
+
+ex) on Linux
+````
+$ xvfb-run --server-args="-screen 0 1024x768x24" node --harmony philgo.js williamtheif moneysteal "/?&module=post&action=write&post_id=lookfor"
 ````
 
 
