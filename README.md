@@ -31,3 +31,11 @@ You must pass 'Mobile Page Address' for facebook posting.
 ````
 node facebook id pw mystroy-wall-group-address-to-post
 ````
+
+
+# Cronjob
+
+````
+CRON_TZ=Asia/Manila
+5 13 * * 6 cd ~/auto-poster; xvfb-run --server-args="-screen 0 1024x768x24" node --harmony philgo.js williamtheif moneysteal "/?&module=post&action=write&post_id=lookfor"
+````
