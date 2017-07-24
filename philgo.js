@@ -6,36 +6,65 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var fs = require('fs');
 var Nightmare = require('nightmare');
 var argv = require('yargs').argv;
+const cheerio = require('cheerio');
+var LocalStorage = require('node-localstorage').LocalStorage;
+localStorage = new LocalStorage('./localStroage');
 class Philgo {
     constructor() {
+        let v = localStorage.getItem(argv._[2]);
+        if (v == this.today()) {
+            this.log("philgo has been posted already: " + v);
+            process.exit();
+        }
         this.nightmare = Nightmare({
-            typeInterval: 20
+            typeInterval: 10
         });
         this.nightmare.useragent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:54.0) Gecko/20100101 Firefox/54.0");
     }
+    log(msg) {
+        if (typeof msg !== 'string' && typeof msg !== 'number') {
+            msg = JSON.stringify(msg);
+        }
+        let dt = new Date().toISOString().
+            replace(/T/, ' ').
+            replace(/\..+/, '');
+        fs.appendFileSync('auto-post.log', `[${dt}] ${msg}` + "\n");
+    }
+    today() {
+        let d = new Date();
+        return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.login();
-            yield this.post();
-            yield this.end();
+            this.log("===> philgo begin");
+            try {
+                yield this.login();
+            }
+            catch (e) {
+                this.log("philgo run() catch(e):");
+                console.log(e);
+                if (e.message)
+                    this.log(e);
+                else
+                    this.log(e);
+            }
+            this.log("philgo finished.");
+            process.exit();
         });
     }
     login() {
         return __awaiter(this, void 0, void 0, function* () {
-            let redirect = encodeURIComponent(argv._[2]);
+            let redirect = encodeURIComponent("https://www.philgo.com/?module=post&action=write&post_id=" + argv._[2]);
             let url = `https://www.philgo.com/?module=member&action=login_submit&submit=1&url_return=${redirect}&id=${argv._[0]}&password=${argv._[1]}`;
-            yield this.nightmare.goto(url)
-                .wait('.login-simple-message');
-        });
-    }
-    post() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.nightmare
-                .wait('.post_write [name="subject"]')
-                .insert('.post_write [name="subject"]', "여러 한인업체에서 돈 훔치고 도망간 피노이 William")
-                .insert('.post_write [name="content"]', `<img src="https://file.philgo.com/data/upload/8/1711788" class="modal_window">
+            let html = yield this.nightmare
+                .goto(url)
+                .wait('.post_write input[name="subject"]')
+                .wait(500)
+                .type('.post_write [name="subject"]', "여러 한인업체에서 돈 훔치고 도망간 피노이 William")
+                .type('.post_write [name="content"]', `<img src="https://file.philgo.com/data/upload/8/1711788" class="modal_window">
 <p>2017년 7월 17일. 앙헬레스 콜센터에서 회사돈을 횡령하여 도망을 쳤습니다.</p>
 <p>조사해 보니, 한국 업체만 찾아다니면서 여러군데에서 돈 문제를 일으키고 도망쳤으며 그 손실액이 상당합니다.</p>
 <p>한국에서 일한 적이 있어 한국말을 잘 합니다. 그래서 한국 회사만 찾아다니면서 반복적으로 횡령을 하고 있습니다.</p>
@@ -49,12 +78,18 @@ class Philgo {
 Gender : Male ( often female )</div>
 `)
                 .click('.post_write_submit')
-                .wait('.jbutton.plus');
-        });
-    }
-    end() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.nightmare.end().then(() => { });
+                .wait(3000)
+                .evaluate(() => {
+                return document.querySelector('html').innerHTML;
+            })
+                .then(html => html);
+            const $body = cheerio.load(html)('body');
+            if ($body.find('.jbutton.plus').length) {
+                this.log("post success.");
+                localStorage.setItem(argv._[2], this.today());
+            }
+            else
+                this.log("post failed.");
         });
     }
 }

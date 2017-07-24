@@ -1,41 +1,77 @@
+var fs = require('fs');
 var Nightmare = require('nightmare');
 var argv = require('yargs').argv;
+const cheerio = require('cheerio');
 
+
+
+var LocalStorage = require('node-localstorage').LocalStorage;
+localStorage = new LocalStorage('./localStroage');
 
 
 class Philgo {
     nightmare;
     constructor() {
+
+        let v = localStorage.getItem( argv._[2] );
+        if ( v == this.today() ) {
+            this.log("philgo has been posted already: " + v);
+            process.exit();
+        }
+
         this.nightmare = Nightmare({
             // show: true,
             // openDevTools: { mode: 'detach' },
-            typeInterval: 20
+            typeInterval: 10
         });
         this.nightmare.useragent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:54.0) Gecko/20100101 Firefox/54.0");
+
+    }
+
+    log(msg) {
+        if (typeof msg !== 'string' && typeof msg !== 'number') {
+            msg = JSON.stringify(msg);
+        }
+        let dt = new Date().toISOString().
+            replace(/T/, ' ').      // replace T with a space
+            replace(/\..+/, '')     // delete the dot and everything after
+        fs.appendFileSync('auto-post.log', `[${dt}] ${msg}` + "\n");
     }
 
 
+    today() {
+        let d = new Date();
+        return d.getFullYear() + '-' + ( d.getMonth() + 1 ) + '-' + d.getDate();
+    }
     async run() {
-        await this.login();
-        await this.post();
-        await this.end();
+        this.log("===> philgo begin");
+        try {
+            await this.login();
+        }
+        catch (e) {
+            // console.log("error: ");
+            this.log("philgo run() catch(e):");
+            console.log(e);
+            if ( e.message ) this.log(e);
+            else this.log(e);
+        }
+        this.log("philgo finished.");
+        process.exit();
     }
+
+
 
     async login() {
-        // console.log("login()");
-        let redirect = encodeURIComponent(argv._[2]);
+        // this.log("philgo login() .......");
+        // console.log(argv);
+        let redirect = encodeURIComponent("https://www.philgo.com/?module=post&action=write&post_id=" + argv._[2]);
         let url = `https://www.philgo.com/?module=member&action=login_submit&submit=1&url_return=${redirect}&id=${argv._[0]}&password=${argv._[1]}`;
-        // console.log("url: ", url);
-        await this.nightmare.goto(url)
-            .wait('.login-simple-message');
-    }
-
-    async post() {
-        // console.log('post()');
-        await this.nightmare
-            .wait('.post_write [name="subject"]')
-            .insert('.post_write [name="subject"]', "여러 한인업체에서 돈 훔치고 도망간 피노이 William")
-            .insert('.post_write [name="content"]', `<img src="https://file.philgo.com/data/upload/8/1711788" class="modal_window">
+        let html = await this.nightmare
+            .goto(url)
+            .wait('.post_write input[name="subject"]')
+            .wait(500)
+            .type('.post_write [name="subject"]', "여러 한인업체에서 돈 훔치고 도망간 피노이 William")
+            .type('.post_write [name="content"]', `<img src="https://file.philgo.com/data/upload/8/1711788" class="modal_window">
 <p>2017년 7월 17일. 앙헬레스 콜센터에서 회사돈을 횡령하여 도망을 쳤습니다.</p>
 <p>조사해 보니, 한국 업체만 찾아다니면서 여러군데에서 돈 문제를 일으키고 도망쳤으며 그 손실액이 상당합니다.</p>
 <p>한국에서 일한 적이 있어 한국말을 잘 합니다. 그래서 한국 회사만 찾아다니면서 반복적으로 횡령을 하고 있습니다.</p>
@@ -49,14 +85,20 @@ class Philgo {
 Gender : Male ( often female )</div>
 `)
             .click('.post_write_submit')
-            .wait('.jbutton.plus');
-        //console.log('post() done');
+            .wait(3000)
+            .evaluate(() => {
+                return document.querySelector('html').innerHTML;
+            })
+            .then(html => html);
+
+        const $body = cheerio.load(html)('body');
+        if ($body.find('.jbutton.plus').length) {
+            this.log("post success.");
+            localStorage.setItem( argv._[2], this.today() );
+        }
+        else this.log("post failed.");
     }
 
-    async end() {
-        // console.log("end()");
-        return this.nightmare.end().then(() => { });
-    }
 }
 
 
