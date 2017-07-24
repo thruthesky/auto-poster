@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -6,10 +7,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
+var fs = require('fs');
 var Nightmare = require('nightmare');
 var argv = require('yargs').argv;
+const cheerio = require("cheerio");
+var LocalStorage = require('node-localstorage').LocalStorage;
+let localStorage = new LocalStorage('./localStroage');
+var options = [];
 class Facebook {
     constructor() {
+        let v = localStorage.getItem(argv._[2]);
+        if (v == this.today()) {
+            this.log("facebook has been posted already for: " + v);
+            process.exit();
+        }
         this.nightmare = Nightmare({
             typeInterval: 20
         });
@@ -17,41 +29,52 @@ class Facebook {
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.log("facebook begin: " + argv._[2]);
             yield this.login();
             yield this.post();
             yield this.end();
+            this.log("facebook end");
         });
     }
     login() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.nightmare.goto("https://m.facebook.com")
+            let html = yield this.nightmare.goto("https://m.facebook.com")
                 .wait('[name="email"]')
                 .type('[name="email"]', argv._[0])
                 .type('[name="pass"]', argv._[1])
                 .click('[name="login"]')
                 .wait('img[alt*="Nam"]')
-                .evaluate(() => { })
-                .then(() => { });
+                .evaluate(() => {
+                return document.querySelector('html').innerHTML;
+            })
+                .then(html => html);
+            const $body = cheerio.load(html)('body');
+            let txt = $body.find('input[type="submit"]').val();
+            if (txt == 'OK') {
+                this.log("login success");
+            }
             return;
         });
     }
     post() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('post()');
-            return yield this.nightmare
+            let html = yield this.nightmare
                 .goto(argv._[2])
-                .wait(3000)
                 .wait('textarea')
-                .wait(3000)
-                .type('textarea', 'http://www.philgo.com/?1273287271')
-                .wait(2500)
+                .type('textarea', 'http://witheng.com/william/index.html')
                 .click('[name="view_post"]')
                 .wait(3000)
                 .evaluate(() => {
+                return document.querySelector('html').innerHTML;
             })
-                .then(() => {
-                console.log('Done with url: ', argv._[2]);
-            });
+                .then(html => html);
+            const $body = cheerio.load(html)('body');
+            let txt = $body.find('abbr').eq(0).text();
+            if (txt == 'Just now') {
+                this.log("facebook post success.");
+                localStorage.setItem(argv._[2], this.today());
+            }
         });
     }
     end() {
@@ -59,9 +82,23 @@ class Facebook {
             return this.nightmare.end().then(() => { });
         });
     }
+    log(msg) {
+        if (typeof msg !== 'string' && typeof msg !== 'number') {
+            msg = JSON.stringify(msg);
+        }
+        let dt = new Date().toISOString().
+            replace(/T/, ' ').
+            replace(/\..+/, '');
+        fs.appendFileSync('auto-post.log', `[${dt}] ${msg}` + "\n");
+    }
+    today() {
+        let d = new Date();
+        return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
 }
-if (argv._.length < 3) {
-    console.log("Input ID, Password, URL");
+options = argv._;
+if (options.length < 3) {
+    console.log("Input ID, Password, URL !");
 }
 else {
     (new Facebook()).run();

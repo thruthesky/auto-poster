@@ -1,12 +1,12 @@
 var fs = require('fs');
 var Nightmare = require('nightmare');
 var argv = require('yargs').argv;
-const cheerio = require('cheerio');
+import * as cheerio from 'cheerio';
 
 
 
 var LocalStorage = require('node-localstorage').LocalStorage;
-localStorage = new LocalStorage('./localStroage');
+var localStorage = new LocalStorage('./localStroage');
 
 
 class Philgo {
