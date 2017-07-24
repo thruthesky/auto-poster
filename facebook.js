@@ -23,6 +23,8 @@ class Facebook {
             process.exit();
         }
         this.nightmare = Nightmare({
+            show: true,
+            openDevTools: { mode: 'detach' },
             typeInterval: 20
         });
         this.nightmare.useragent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:54.0) Gecko/20100101 Firefox/54.0");
@@ -58,7 +60,6 @@ class Facebook {
     }
     post() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('post()');
             let html = yield this.nightmare
                 .goto(argv._[2])
                 .wait('textarea')
@@ -70,10 +71,20 @@ class Facebook {
             })
                 .then(html => html);
             const $body = cheerio.load(html)('body');
-            let txt = $body.find('abbr').eq(0).text();
-            if (txt == 'Just now') {
-                this.log("facebook post success.");
-                localStorage.setItem(argv._[2], this.today());
+            if ($body.find('[role="article"] > h3 > a')) {
+                let txt = $body.find('[role="article"] > h3 > a').text();
+                console.log("text: ", txt);
+                if (txt.indexOf("You have ") != -1) {
+                    this.log("facebook post success but pending.");
+                    localStorage.setItem(argv._[2], this.today());
+                }
+            }
+            else if ($body.find('abbr')) {
+                let txt = $body.find('abbr').eq(0).text();
+                if (txt == 'Just now') {
+                    this.log("facebook post success.");
+                    localStorage.setItem(argv._[2], this.today());
+                }
             }
         });
     }
